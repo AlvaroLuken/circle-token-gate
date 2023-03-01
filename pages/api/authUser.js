@@ -1,3 +1,4 @@
+import { verifyMessage } from "ethers/lib/utils";
 const { Alchemy, Network, AssetTransfersCategory } = require("alchemy-sdk");
 
 // Optional Config object, but defaults to demo api-key and eth-mainnet.
@@ -11,16 +12,22 @@ const alchemy = new Alchemy(settings);
 export default async function handler(req, res) {
   const requestMethod = req.method;
   const body = JSON.parse(req.body);
-  const { userAddress } = body;
-  const totalTokensSent = await getAmountTokensSent(userAddress);
+  const { signerAddress, signerMessage, signerData } = body;
+  const recoveredAddress = verifyMessage(signerMessage, signerData);
+  let totalTokensSent = 0;
+  if (signerAddress == recoveredAddress) {
+    console.log("successful verification!");
+    totalTokensSent = await getAmountTokensSent(recoveredAddress);
+  }
+
   switch (requestMethod) {
     case "POST":
       if (totalTokensSent >= 1) {
         res.status(200).json({ message: "Krabby Patty Secret Formula! 🍔" });
       } else {
-        res
-          .status(200)
-          .json({ message: "Please pay $10 USDC to see this content!" });
+        res.status(200).json({
+          message: "You have not paid enough to see the secret message! ❌",
+        });
       }
   }
 }

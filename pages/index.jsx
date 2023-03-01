@@ -1,36 +1,62 @@
-import { Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSignMessage } from "wagmi";
 
 import styles from "../styles/Home.module.css";
 
 export default function Home() {
   const { address, isConnected, isDisconnected } = useAccount();
-  const [hasPaidUSDC, setHasPaidUSDC] = useState(false);
-  const [secretMessage, setSecretMessage] = useState(
-    "You have to pay $10 USDC to see the secret!"
-  );
-  const data = {
-    userAddress: address,
-  };
-  useEffect(() => {
-    console.log("i fire once");
-    checkIfUserHasPaid();
-  }, []);
+  const [hasVerified, setHasVerified] = useState(false);
 
-  async function checkIfUserHasPaid() {
+  const [message] = useState(
+    "Creating dApps with Create Web3 Dapp is easy af!"
+  );
+  const { data, error, isLoading, signMessage } = useSignMessage({
+    onSuccess(data, variables) {
+      // Verify signature when sign message succeeds
+      checkIfUserHasPaid(address, variables.message, data);
+      setHasVerified(true);
+    },
+  });
+
+  const [secretMessage, setSecretMessage] = useState(
+    "You have to pay $1 USDC to see the secret! 👀"
+  );
+
+  useEffect(() => {
+    setHasVerified(false);
+    setSecretMessage("You have to pay $1 USDC to see the secret! 👀");
+  }, [address]);
+
+  async function checkIfUserHasPaid(userAddress, message, data) {
+    const verificationData = {
+      signerAddress: userAddress,
+      signerMessage: message,
+      signerData: data,
+    };
     const response = await fetch("/api/authUser", {
       method: "POST",
-      body: JSON.stringify(data),
+      body: JSON.stringify(verificationData),
     });
     const messageResponse = await response.json();
     setSecretMessage(messageResponse.message);
-    setHasPaidUSDC(true);
   }
   return (
     <div>
       <main className={styles.main}>
-        <Heading color="white">{secretMessage}</Heading>
+        <h1 className={styles.message}>{secretMessage}</h1>
+        <div>
+          {!hasVerified ? (
+            <button
+              className={styles.button}
+              onClick={() => signMessage({ message })}
+            >
+              <b>Verify Payment With Signature</b>
+            </button>
+          ) : (
+            ""
+          )}
+          {error && <div>{error.message}</div>}
+        </div>
       </main>
     </div>
   );
