@@ -12,6 +12,7 @@ export default async function handler(req, res) {
   const requestMethod = req.method;
   const body = JSON.parse(req.body);
   const { userAddress } = body;
+  console.log(userAddress);
   const totalTokensSent = await getAmountTokensSent(userAddress);
   switch (requestMethod) {
     case "POST":
