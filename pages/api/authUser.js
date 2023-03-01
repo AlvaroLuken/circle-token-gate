@@ -12,21 +12,20 @@ export default async function handler(req, res) {
   const requestMethod = req.method;
   const body = JSON.parse(req.body);
   const { userAddress } = body;
-  const response = await checkTransfers(userAddress);
-  const amountPaid = response.transfers[0].value;
+  const totalTokensSent = await getAmountTokensSent(userAddress);
   switch (requestMethod) {
     case "POST":
-      if (amountPaid >= 1) {
-        res.status(200).json({ message: "Super secret content." });
+      if (totalTokensSent >= 1) {
+        res.status(200).json({ message: "Krabby Patty Secret Formula! 🍔" });
       } else {
         res
-          .status(401)
+          .status(200)
           .json({ message: "Please pay $10 USDC to see this content!" });
       }
   }
 }
 
-async function checkTransfers(userAddress) {
+async function getAmountTokensSent(userAddress) {
   const getTransfers = await alchemy.core.getAssetTransfers({
     fromBlock: "0x0",
     toBlock: "latest",
@@ -35,5 +34,9 @@ async function checkTransfers(userAddress) {
     excludeZeroValue: true,
     category: [AssetTransfersCategory.ERC20],
   });
-  return getTransfers;
+  let totalTransferValue = 0;
+  getTransfers["transfers"].forEach((tx) => {
+    totalTransferValue += tx.value;
+  });
+  return totalTransferValue;
 }

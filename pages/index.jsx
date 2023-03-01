@@ -1,13 +1,15 @@
+import { Heading } from "@chakra-ui/react";
 import { useEffect, useState } from "react";
 import { useAccount } from "wagmi";
-import HasNotPaid from "../components/HasNotPaid";
-import HasPaid from "../components/HasPaid";
 
 import styles from "../styles/Home.module.css";
 
-export default function Home({ message }) {
+export default function Home() {
   const { address, isConnected, isDisconnected } = useAccount();
   const [hasPaidUSDC, setHasPaidUSDC] = useState(false);
+  const [secretMessage, setSecretMessage] = useState(
+    "You have to pay $10 USDC to see the secret!"
+  );
   const data = {
     userAddress: address,
   };
@@ -16,29 +18,20 @@ export default function Home({ message }) {
     checkIfUserHasPaid();
   }, []);
 
-  return (
-    <div>
-      <main className={styles.main}>
-        {hasPaidUSDC ? <HasPaid /> : <HasNotPaid />}
-      </main>
-    </div>
-  );
-}
-
-export async function getServerSideProps({ message }) {
-  try {
+  async function checkIfUserHasPaid() {
     const response = await fetch("/api/authUser", {
       method: "POST",
       body: JSON.stringify(data),
     });
-    console.log(response);
-  } catch (e) {
-    console.log(e);
-    console.log("You have to pay x $USDC to see the content!");
+    const messageResponse = await response.json();
+    setSecretMessage(messageResponse.message);
+    setHasPaidUSDC(true);
   }
-  return {
-    props: {
-      data: result,
-    },
-  };
+  return (
+    <div>
+      <main className={styles.main}>
+        <Heading color="white">{secretMessage}</Heading>
+      </main>
+    </div>
+  );
 }
